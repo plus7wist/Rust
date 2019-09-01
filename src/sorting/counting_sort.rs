@@ -51,7 +51,7 @@ pub fn generic_counting_sort<T: Into<u64> + From<u8> + AddAssign + Copy>(
 
 #[cfg(test)]
 mod test {
-    use super::super::is_sorted;
+    use super::super::tests::is_sorted;
     use super::*;
 
     #[test]

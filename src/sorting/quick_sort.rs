@@ -32,3 +32,22 @@ pub fn quick_sort<T: Ord>(arr: &mut [T]) {
     let len = arr.len();
     _quick_sort(arr, 0, (len - 1) as isize);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::tests::is_sorted;
+    use super::*;
+
+    #[test]
+    fn test_quick_sort() {
+        //descending
+        let mut ve1 = vec![6, 5, 4, 3, 2, 1];
+        quick_sort(&mut ve1);
+        assert!(is_sorted(&ve1));
+
+        //pre-sorted
+        let mut ve2 = vec![1, 2, 3, 4, 5, 6];
+        quick_sort(&mut ve2);
+        assert!(is_sorted(&ve2));
+    }
+}
