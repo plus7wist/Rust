@@ -28,16 +28,8 @@ fn merge_sort_merge<T: Ord>(
     let mut rt = bufferr.iter().peekable();
     let mut it = index.iter_mut();
 
-    loop {
-        let l = **match lt.peek() {
-            Some(l) => l,
-            None => break,
-        };
-        let r = **match rt.peek() {
-            Some(r) => r,
-            None => break,
-        };
-        *it.next().unwrap() = if array[l] < array[r] {
+    while let (Some(l), Some(r)) = (lt.peek(), rt.peek()) {
+        *it.next().unwrap() = if array[**l] < array[**r] {
             *lt.next().unwrap()
         } else {
             *rt.next().unwrap()
@@ -105,11 +97,11 @@ mod tests {
     use std::cmp::Ordering;
     use std::sync::Mutex;
 
-    struct Stuff {
+    struct NoClone {
         data: Mutex<i32>,
     }
 
-    impl Stuff {
+    impl NoClone {
         fn new(data: i32) -> Self {
             Self {
                 data: Mutex::new(data),
@@ -121,29 +113,29 @@ mod tests {
         }
     }
 
-    impl PartialEq for Stuff {
-        fn eq(&self, other: &Stuff) -> bool {
+    impl PartialEq for NoClone {
+        fn eq(&self, other: &NoClone) -> bool {
             self.get() == other.get()
         }
     }
 
-    impl PartialOrd for Stuff {
-        fn partial_cmp(&self, other: &Stuff) -> Option<Ordering> {
-            Some(self.get().cmp(&other.get()))
+    impl PartialOrd for NoClone {
+        fn partial_cmp(&self, other: &NoClone) -> Option<Ordering> {
+            self.get().partial_cmp(&other.get())
         }
     }
 
-    impl Eq for Stuff {}
+    impl Eq for NoClone {}
 
-    impl Ord for Stuff {
-        fn cmp(&self, other: &Stuff) -> Ordering {
+    impl Ord for NoClone {
+        fn cmp(&self, other: &NoClone) -> Ordering {
             self.partial_cmp(other).unwrap()
         }
     }
 
     #[test]
     fn merge_sort_no_clone() {
-        let mut v = vec![Stuff::new(5), Stuff::new(4), Stuff::new(3)];
+        let mut v = vec![NoClone::new(5), NoClone::new(4), NoClone::new(3)];
         merge_sort(&mut v);
         assert!(is_sorted(&v));
     }
