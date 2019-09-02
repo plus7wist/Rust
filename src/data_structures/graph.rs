@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::marker::PhantomData;
 
 /// 'Graph<N, E, Ty>' is a data structure for graphs with optionally
@@ -267,23 +266,22 @@ mod tests {
 #[derive(PartialEq, Debug, Clone)]
 struct FreeMap<Data> {
     pub map: HashMap<usize, Data>,
-    free: HashSet<usize>,
+    free: Vec<usize>,
 }
 
 impl<Data> FreeMap<Data> {
     fn new() -> Self {
         Self {
             map: HashMap::new(),
-            free: HashSet::new(),
+            free: Vec::new(),
         }
     }
 
     fn insert(&mut self, data: Data) -> usize {
         let mut index = self.map.len();
 
-        self.free.iter().next().map(|free| *free).map(|free| {
+        self.free.pop().map(|free| {
             index = free;
-            let _ = self.free.remove(&free);
         });
         self.map.insert(index, data);
 
@@ -305,7 +303,7 @@ impl<Data> FreeMap<Data> {
 
     fn remove(&mut self, index: &usize) -> Option<Data> {
         if let Some(data) = self.map.remove(&index) {
-            self.free.insert(*index);
+            self.free.push(*index);
             Some(data)
         } else {
             None
