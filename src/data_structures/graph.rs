@@ -182,6 +182,11 @@ mod tests {
         // as an argument below as well.
         let start = graph.add_node(());
         let end = graph.add_node(());
+        assert_eq!(
+            graph.add_edge("".into(), start, std::cmp::max(start, end) + 1),
+            None
+        );
+
         graph.add_edge(String::from("edge"), start, end);
 
         // Test if graph contains a unique edge.
