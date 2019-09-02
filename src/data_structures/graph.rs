@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::marker::PhantomData;
 
 /// 'Graph<N, E, Ty>' is a data structure for graphs with optionally
@@ -8,8 +9,8 @@ use std::marker::PhantomData;
 /// implementation.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Graph<N, E, Ty = Directed> {
-    nodes: HashMap<usize, Node<N>>,
-    edges: HashMap<usize, Edge<E>>,
+    nodes: FreeMap<Node<N>>,
+    edges: FreeMap<Edge<E>>,
     ty: PhantomData<Ty>,
 }
 
@@ -19,8 +20,8 @@ where
 {
     pub fn new() -> Self {
         Graph {
-            nodes: HashMap::new(),
-            edges: HashMap::new(),
+            nodes: FreeMap::new(),
+            edges: FreeMap::new(),
             ty: PhantomData,
         }
     }
@@ -32,19 +33,7 @@ where
 
     /// Add node to graph and return its assigned index.
     pub fn add_node(&mut self, weight: N) -> usize {
-        let node = Node { weight: weight };
-        let mut index = self.nodes.len();
-
-        // There are at most self.nodes.len() many indices in use. Hence
-        // trying self.nodes.len()+1 many of them will always result
-        // in an available index. Most of the time, the first one
-        // (i.e. self.nodes.len() ) will work but if we delete and
-        // insert a bunch of nodes, this isn't necessarily true.
-        while self.nodes.contains_key(&index) {
-            index -= 1;
-        }
-        self.nodes.insert(index, node);
-        index
+        self.nodes.insert(Node { weight })
     }
 
     /// Remove node indexed at 'index' and all edges containing that
@@ -52,8 +41,9 @@ where
     pub fn remove_node(&mut self, index: usize) -> Option<N> {
         match self.nodes.remove(&index) {
             Some(node) => {
-                // Only keep those edges that don't contain index as head or tail
+                // TODO Only keep those edges that don't contain index as head or tail
                 self.edges
+                    .map
                     .retain(|_, edge| edge.head != index && edge.tail != index);
                 return Some(node.weight);
             }
@@ -68,29 +58,10 @@ where
     /// tail to the graph. If this succeeds, return index assigned to
     /// that edge. Otherwise return None.
     pub fn add_edge(&mut self, weight: E, head: usize, tail: usize) -> Option<usize> {
-        if !self.nodes.contains_key(&head) || !self.nodes.contains_key(&head) {
+        if !self.nodes.contains_key(&head) || !self.nodes.contains_key(&tail) {
             None
         } else {
-            let mut index = self.edges.len();
-
-            // There are at most self.edges.len() many indices in use. Hence
-            // trying self.edges.len()+1 many of them will always result
-            // in an available index. Most of the time, the first one
-            // (i.e. self.edges.len() ) will work but if we delete and
-            // insert a bunch of edges, this isn't necessarily true.
-            while self.edges.contains_key(&index) {
-                index -= 1;
-            }
-
-            self.edges.insert(
-                index,
-                Edge {
-                    weight: weight,
-                    head: head,
-                    tail: tail,
-                },
-            );
-            Some(index)
+            Some(self.edges.insert(Edge { weight, head, tail }))
         }
     }
 
@@ -120,7 +91,7 @@ where
     /// n == 0, it returns all available edges.
     pub fn find_n_edges(&self, n: usize, head: usize, tail: usize) -> Vec<usize> {
         let mut result: Vec<usize> = Vec::new();
-        for (index, edge) in self.edges.iter() {
+        for (index, edge) in self.edges.map.iter() {
             if [edge.head, edge.tail] == [head, tail]
                 || (self.is_directed() && [edge.head, edge.tail] == [tail, head])
             {
@@ -185,7 +156,7 @@ impl EdgeType for Undirected {
 
 #[cfg(test)]
 mod tests {
-    use data_structure::graph::*;
+    use super::*;
 
     #[test]
     fn add_node() {
@@ -290,5 +261,54 @@ mod tests {
                 tail: end
             }
         );
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+struct FreeMap<Data> {
+    pub map: HashMap<usize, Data>,
+    free: HashSet<usize>,
+}
+
+impl<Data> FreeMap<Data> {
+    fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+            free: HashSet::new(),
+        }
+    }
+
+    fn insert(&mut self, data: Data) -> usize {
+        let mut index = self.map.len();
+
+        self.free.iter().next().map(|free| *free).map(|free| {
+            index = free;
+            let _ = self.free.remove(&free);
+        });
+        self.map.insert(index, data);
+
+        index
+    }
+
+    fn contains_key(&self, index: &usize) -> bool {
+        self.map.contains_key(index)
+    }
+
+    #[allow(dead_code)]
+    fn get(&self, index: &usize) -> Option<&Data> {
+        self.map.get(index)
+    }
+
+    fn len(&self) -> usize {
+        self.map.len()
+    }
+
+    fn remove(&mut self, index: &usize) -> Option<Data> {
+        if let Some(data) = self.map.remove(&index) {
+            self.free.insert(*index);
+            Some(data)
+        } else {
+            None
+        }
     }
 }
