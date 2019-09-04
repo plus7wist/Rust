@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::iter::Iterator;
 use std::marker::PhantomData;
 
 /// 'Graph<N, E, Ty>' is a data structure for graphs with optionally
@@ -102,6 +103,14 @@ where
         }
         result.sort();
         result
+    }
+
+    pub fn edges_from(&self, head: usize) -> impl Iterator + '_ {
+        self.edges.map.iter().filter(move |(_, edge)| head == edge.head)
+    }
+
+    pub fn edge_between(&self, head: usize, tail: usize) -> impl Iterator + '_  {
+        self.edges.map.iter().filter(move |(_, edge)| (head, tail) == (edge.head, edge.tail))
     }
 
     pub fn node_count(&self) -> usize {
