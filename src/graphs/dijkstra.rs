@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
-// use super::graph::{AdjacencyEdge, AdjacencyGraph};
 use crate::data_structures::graph::{AdjacencyEdge, AdjacencyGraph};
 
 /// Dijstra's single source shortest path algorithm.
