@@ -1,4 +1,4 @@
-pub mod dijkstra;
-mod heap;
+pub mod graph;
 
+mod heap;
 pub use self::heap::MinHeap;
